@@ -44,15 +44,20 @@ class TheatreHall(models.Model):
 
 
 class Performance(models.Model):
-    play = models.ForeignKey(Play, related_name="performances", on_delete=models.PROTECT)
-    theatre_hall = models.ForeignKey(TheatreHall, related_name="performances", on_delete=models.CASCADE)
+    play = models.ForeignKey(
+        Play, related_name="performances", on_delete=models.PROTECT
+    )
+    theatre_hall = models.ForeignKey(
+        TheatreHall, related_name="performances", on_delete=models.CASCADE
+    )
     show_time = models.DateTimeField(db_index=True)
 
     class Meta:
         constraints = [
             UniqueConstraint(
                 fields=(
-                    "theatre_hall", "show_time",
+                    "theatre_hall",
+                    "show_time",
                 ),
                 name="uniq_show_time_per_hall",
             )
@@ -70,16 +75,22 @@ class Reservation(models.Model):
 class Ticket(models.Model):
     row = models.PositiveIntegerField()
     seat = models.PositiveIntegerField()
-    performance = models.ForeignKey(Performance, related_name="tickets", on_delete=models.CASCADE)
-    reservation = models.ForeignKey(Reservation, related_name="tickets", on_delete=models.CASCADE)
+    performance = models.ForeignKey(
+        Performance, related_name="tickets", on_delete=models.CASCADE
+    )
+    reservation = models.ForeignKey(
+        Reservation, related_name="tickets", on_delete=models.CASCADE
+    )
 
     class Meta:
         constraints = [
             UniqueConstraint(
                 fields=(
-                    "row", "seat", "performance",
+                    "row",
+                    "seat",
+                    "performance",
                 ),
-                name="uniq_row_and_seat_for_performance"
+                name="uniq_row_and_seat_for_performance",
             )
         ]
 
