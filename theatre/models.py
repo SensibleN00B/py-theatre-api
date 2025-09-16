@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import UniqueConstraint
 
@@ -118,3 +119,25 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{self.performance} (row: {self.row}, seat: {self.seat})"
+
+    @staticmethod
+    def validate_ticket(row: int, seat: int, hall: TheatreHall) -> None:
+        for value, field_name, hall_attr in [
+            (row, "row", "rows"),
+            (seat, "seat", "seats_in_row"),
+        ]:
+            max_count = getattr(hall, hall_attr)
+            if not (1 <= value <= max_count):
+                raise ValidationError(
+                    {
+                        field_name: f"{field_name.capitalize()} number must be "
+                        f"between 1 and {max_count}"
+                    }
+                )
+
+    def clean(self):
+        self.validate_ticket(
+            self.row,
+            self.seat,
+            self.performance.theatre_hall
+        )
