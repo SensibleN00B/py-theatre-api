@@ -103,7 +103,7 @@ class PerformanceSerializer(serializers.ModelSerializer):
 
 class PerformanceListSerializer(PerformanceSerializer):
     play_title = serializers.CharField(source="play.title", read_only=True)
-    play_image = serializers.ImageField(source="movie.image", read_only=True)
+    play_image = serializers.ImageField(source="play.image", read_only=True)
     hall_name = serializers.CharField(
         source="theatre_hall.name", read_only=True
     )
@@ -217,4 +217,4 @@ class ReservationSerializer(serializers.ModelSerializer):
 
 
 class ReservationListSerializer(ReservationSerializer):
-    tickets = TicketSerializer(many=True, read_only=True)
+    tickets = TicketListSerializer(many=True, read_only=True)
