@@ -130,7 +130,8 @@ class Ticket(models.Model):
             if not (1 <= value <= max_count):
                 raise ValidationError(
                     {
-                        field_name: f"{field_name.capitalize()} number must be "
+                        field_name: f"{field_name.capitalize()} "
+                        f"number must be "
                         f"between 1 and {max_count}"
                     }
                 )

@@ -117,9 +117,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
     Return a list of the current user's reservations.
     """
 
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return (

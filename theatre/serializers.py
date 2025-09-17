@@ -217,7 +217,8 @@ class ReservationSerializer(serializers.ModelSerializer):
             except IntegrityError:
                 raise ValidationError(
                     {
-                        "detail": "Some seat is already taken for this performance."
+                        "detail": "Some seat is already taken "
+                        "for this performance."
                     }
                 )
         return reservation
