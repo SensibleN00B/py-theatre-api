@@ -137,7 +137,5 @@ class Ticket(models.Model):
 
     def clean(self):
         self.validate_ticket(
-            self.row,
-            self.seat,
-            self.performance.theatre_hall
+            self.row, self.seat, self.performance.theatre_hall
         )
