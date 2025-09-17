@@ -81,6 +81,13 @@ class PlayDetailSerializer(serializers.ModelSerializer):
         )
 
 
+class PlayImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Play
+        fields = ("id", "image")
+        extra_kwargs = {"image": {"required": True}}
+
+
 class TheatreHallSerializer(serializers.ModelSerializer):
     hall_capacity = serializers.IntegerField(read_only=True)
 
