@@ -1,0 +1,293 @@
+[
+  {
+    "model": "theatre.actor",
+    "pk": 1,
+    "fields": {
+      "first_name": "William",
+      "last_name": "Shakespeare"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 2,
+    "fields": {
+      "first_name": "Natalie",
+      "last_name": "Portman"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 3,
+    "fields": {
+      "first_name": "Ian",
+      "last_name": "McKellen"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 4,
+    "fields": {
+      "first_name": "Emma",
+      "last_name": "Watson"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 5,
+    "fields": {
+      "first_name": "Benedict",
+      "last_name": "Cumberbatch"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 6,
+    "fields": {
+      "first_name": "Meryl",
+      "last_name": "Streep"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 7,
+    "fields": {
+      "first_name": "Tom",
+      "last_name": "Hiddleston"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 8,
+    "fields": {
+      "first_name": "Helen",
+      "last_name": "Mirren"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 9,
+    "fields": {
+      "first_name": "Daniel",
+      "last_name": "Radcliffe"
+    }
+  },
+  {
+    "model": "theatre.actor",
+    "pk": 10,
+    "fields": {
+      "first_name": "Cate",
+      "last_name": "Blanchett"
+    }
+  },
+  {
+    "model": "theatre.genre",
+    "pk": 1,
+    "fields": {
+      "name": "Drama"
+    }
+  },
+  {
+    "model": "theatre.genre",
+    "pk": 2,
+    "fields": {
+      "name": "Comedy"
+    }
+  },
+  {
+    "model": "theatre.genre",
+    "pk": 3,
+    "fields": {
+      "name": "Musical"
+    }
+  },
+  {
+    "model": "theatre.genre",
+    "pk": 4,
+    "fields": {
+      "name": "Thriller"
+    }
+  },
+  {
+    "model": "theatre.theatrehall",
+    "pk": 1,
+    "fields": {
+      "name": "Main Hall",
+      "rows": 12,
+      "seats_in_row": 18
+    }
+  },
+  {
+    "model": "theatre.theatrehall",
+    "pk": 2,
+    "fields": {
+      "name": "Black Box",
+      "rows": 8,
+      "seats_in_row": 12
+    }
+  },
+  {
+    "model": "theatre.play",
+    "pk": 1,
+    "fields": {
+      "title": "Hamlet",
+      "description": "Shakespeare's classic tragedy.",
+      "actors": [
+        1,
+        3,
+        5
+      ],
+      "genres": [
+        1
+      ],
+      "duration": 160,
+      "image": null
+    }
+  },
+  {
+    "model": "theatre.play",
+    "pk": 2,
+    "fields": {
+      "title": "Much Ado About Nothing",
+      "description": "Romantic comedy full of witty banter.",
+      "actors": [
+        2,
+        4,
+        7
+      ],
+      "genres": [
+        2
+      ],
+      "duration": 130,
+      "image": null
+    }
+  },
+  {
+    "model": "theatre.play",
+    "pk": 3,
+    "fields": {
+      "title": "Les Misérables",
+      "description": "Epic French musical adaptation.",
+      "actors": [
+        6,
+        8,
+        9
+      ],
+      "genres": [
+        1,
+        3
+      ],
+      "duration": 175,
+      "image": null
+    }
+  },
+  {
+    "model": "theatre.play",
+    "pk": 4,
+    "fields": {
+      "title": "The Mousetrap",
+      "description": "Agatha Christie's legendary murder mystery.",
+      "actors": [
+        5,
+        7,
+        10
+      ],
+      "genres": [
+        1,
+        4
+      ],
+      "duration": 120,
+      "image": null
+    }
+  },
+  {
+    "model": "theatre.play",
+    "pk": 5,
+    "fields": {
+      "title": "A Midsummer Night's Dream",
+      "description": "Fantasy comedy of love and mischief.",
+      "actors": [
+        1,
+        2,
+        4,
+        9
+      ],
+      "genres": [
+        2
+      ],
+      "duration": 125,
+      "image": null
+    }
+  },
+  {
+    "model": "theatre.performance",
+    "pk": 1,
+    "fields": {
+      "play": 1,
+      "theatre_hall": 1,
+      "show_time": "2025-10-10T19:00:00Z"
+    }
+  },
+  {
+    "model": "theatre.performance",
+    "pk": 2,
+    "fields": {
+      "play": 1,
+      "theatre_hall": 1,
+      "show_time": "2025-10-11T19:00:00Z"
+    }
+  },
+  {
+    "model": "theatre.performance",
+    "pk": 3,
+    "fields": {
+      "play": 2,
+      "theatre_hall": 1,
+      "show_time": "2025-10-12T18:00:00Z"
+    }
+  },
+  {
+    "model": "theatre.performance",
+    "pk": 4,
+    "fields": {
+      "play": 2,
+      "theatre_hall": 2,
+      "show_time": "2025-10-13T18:00:00Z"
+    }
+  },
+  {
+    "model": "theatre.performance",
+    "pk": 5,
+    "fields": {
+      "play": 3,
+      "theatre_hall": 1,
+      "show_time": "2025-10-14T20:00:00Z"
+    }
+  },
+  {
+    "model": "theatre.performance",
+    "pk": 6,
+    "fields": {
+      "play": 4,
+      "theatre_hall": 2,
+      "show_time": "2025-10-15T19:30:00Z"
+    }
+  },
+  {
+    "model": "theatre.performance",
+    "pk": 7,
+    "fields": {
+      "play": 5,
+      "theatre_hall": 1,
+      "show_time": "2025-10-16T17:00:00Z"
+    }
+  },
+  {
+    "model": "theatre.performance",
+    "pk": 8,
+    "fields": {
+      "play": 5,
+      "theatre_hall": 2,
+      "show_time": "2025-10-17T17:00:00Z"
+    }
+  }
+]

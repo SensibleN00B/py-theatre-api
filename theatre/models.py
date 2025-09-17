@@ -32,7 +32,7 @@ class Play(models.Model):
     description = models.TextField(blank=True)
     actors = models.ManyToManyField(Actor, related_name="plays")
     genres = models.ManyToManyField(Genre, related_name="plays")
-    duration = models.PositiveIntegerField()
+    duration = models.PositiveIntegerField(default=120)
     image = models.ImageField(
         null=True,
         blank=True,
