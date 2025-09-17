@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -168,8 +169,10 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Theatre API",
-    "DESCRIPTION": "REST API for theatre: plays, performances, actors, genres and ticket reservations",
+    "DESCRIPTION": (
+        "REST API for theatre service: "
+        "plays, performances, actors, genres and ticket reservations",
+    ),
     "VERSION": "1.0.0",
-    "SECURITY": [{"bearerAuth": []}],
     "SERVE_INCLUDE_SCHEMA": False,
 }

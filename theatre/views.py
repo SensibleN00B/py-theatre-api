@@ -75,6 +75,14 @@ class PerformanceViewSet(viewsets.ModelViewSet):
 
 
 class ReservationViewSet(viewsets.ModelViewSet):
+    """
+    create:
+    Create a new reservation with one or more tickets.
+
+    list:
+    Return a list of the current user's reservations.
+    """
+
     permission_classes = [
         IsAuthenticated,
     ]
