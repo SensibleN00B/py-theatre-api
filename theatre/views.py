@@ -1,33 +1,37 @@
 from django.db.models import Count, F
-from drf_spectacular.utils import extend_schema
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework import viewsets, status
-from rest_framework.decorators import action, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+)
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
-from theatre.filters import PlayFilter, PerformanceFilter
+from theatre.filters import PerformanceFilter, PlayFilter
 from theatre.models import (
     Actor,
     Genre,
-    TheatreHall,
-    Play,
     Performance,
+    Play,
     Reservation,
+    TheatreHall,
 )
 from theatre.serializers import (
     ActorSerializer,
     GenreSerializer,
-    TheatreHallSerializer,
-    PlayListSerializer,
-    PlayDetailSerializer,
-    PerformanceListSerializer,
     PerformanceDetailSerializer,
-    ReservationSerializer,
-    ReservationListSerializer,
-    PlaySerializer,
+    PerformanceListSerializer,
+    PlayDetailSerializer,
     PlayImageSerializer,
+    PlayListSerializer,
+    PlaySerializer,
+    ReservationListSerializer,
+    ReservationSerializer,
+    TheatreHallSerializer,
 )
 
 
@@ -46,6 +50,53 @@ class TheatreHallViewSet(viewsets.ModelViewSet):
     serializer_class = TheatreHallSerializer
 
 
+@extend_schema(
+    tags=["Plays"],
+    description=(
+        "CRUD operations for plays. "
+        "The list/retrieve serializers differ from the write serializer. "
+        "Filtering is provided by PlayFilter. Results are ordered by title."
+    ),
+)
+@extend_schema_view(
+    list=extend_schema(
+        summary="List plays",
+        parameters=[
+            OpenApiParameter(
+                "title",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description="Filter by title (e.g., icontains)",
+            ),
+            OpenApiParameter(
+                "genres",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                many=True,
+                description="Filter by genre id (repeatable)",
+            ),
+            OpenApiParameter(
+                "actors",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                many=True,
+                description="Filter by actor id (repeatable)",
+            ),
+            OpenApiParameter(
+                "min_duration",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Minimum duration in minutes",
+            ),
+            OpenApiParameter(
+                "max_duration",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Maximum duration in minutes",
+            ),
+        ],
+    ),
+)
 class PlayViewSet(viewsets.ModelViewSet):
     filterset_class = PlayFilter
 
@@ -87,6 +138,15 @@ class PlayViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=["Performances"],
+    description=(
+        "CRUD operations for performances. List responses include seat stats: "
+        "`taken` and `tickets_available`. "
+        "Filtering is provided by PerformanceFilter. "
+        "Results are ordered by Show time."
+    ),
+)
 class PerformanceViewSet(viewsets.ModelViewSet):
     filterset_class = PerformanceFilter
 
@@ -108,6 +168,15 @@ class PerformanceViewSet(viewsets.ModelViewSet):
         return PerformanceDetailSerializer
 
 
+@extend_schema(
+    tags=["Reservations"],
+    description=(
+        "Create a reservation with one or more tickets, "
+        "and list the current user's reservations. "
+        "Authentication is required. "
+        "Results sorted from newest to oldest"
+    ),
+)
 class ReservationViewSet(viewsets.ModelViewSet):
     """
     create:

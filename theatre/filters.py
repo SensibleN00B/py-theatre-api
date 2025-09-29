@@ -1,6 +1,6 @@
 import django_filters as filters
 
-from theatre.models import Play, Performance
+from theatre.models import Performance, Play
 
 
 class PlayFilter(filters.FilterSet):

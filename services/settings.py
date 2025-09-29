@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -31,10 +32,6 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
 
 # Application definition
 
@@ -156,6 +153,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 INTERNAL_IPS = [
     "127.0.0.1",
+    "localhost",
 ]
 
 REST_FRAMEWORK = {
@@ -178,6 +176,10 @@ REST_FRAMEWORK = {
     "PageNumberPagination",
     "PAGE_SIZE": 20,
 }
+
+if "test" in sys.argv:
+    REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {}
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Theatre API",

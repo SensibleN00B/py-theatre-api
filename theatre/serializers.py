@@ -1,17 +1,16 @@
-from django.db import transaction, IntegrityError
+from django.db import IntegrityError, transaction
 from django.utils import timezone
-
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from theatre.models import (
     Actor,
     Genre,
-    Play,
-    TheatreHall,
     Performance,
-    Ticket,
+    Play,
     Reservation,
+    TheatreHall,
+    Ticket,
 )
 
 
