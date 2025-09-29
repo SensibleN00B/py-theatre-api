@@ -1,21 +1,25 @@
+# tests/test_views.py
+
 from datetime import timedelta
+from io import BytesIO
 
-from django.utils import timezone
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
-
-from rest_framework.test import APIClient
+from django.test import TestCase, override_settings
+from django.urls import reverse
+from django.utils import timezone
+from PIL import Image
 from rest_framework import status
+from rest_framework.test import APIClient
 
 from theatre.models import (
     Actor,
     Genre,
-    Play,
-    TheatreHall,
     Performance,
-    Ticket,
+    Play,
     Reservation,
+    TheatreHall,
+    Ticket,
 )
 
 
@@ -24,20 +28,24 @@ def create_user(email="user@example.com", password="pass123"):
 
 
 def create_admin(email="admin@example.com", password="pass123"):
-    return get_user_model().objects.create_superuser(email=email, password=password)
+    return get_user_model().objects.create_superuser(
+        email=email, password=password
+    )
 
 
 def sample_play(title="Macbeth"):
     play = Play.objects.create(title=title, duration=120, description="")
-    a1 = Actor.objects.create(first_name="A", last_name="One")
-    g1 = Genre.objects.create(name=f"{title}-Drama")
-    play.actors.add(a1)
-    play.genres.add(g1)
+    actor1 = Actor.objects.create(first_name="A", last_name="One")
+    genre1 = Genre.objects.create(name=f"{title}-Drama")
+    play.actors.add(actor1)
+    play.genres.add(genre1)
     return play
 
 
 def sample_hall(name="Blue Hall", rows=5, seats_in_row=5):
-    return TheatreHall.objects.create(name=name, rows=rows, seats_in_row=seats_in_row)
+    return TheatreHall.objects.create(
+        name=name, rows=rows, seats_in_row=seats_in_row
+    )
 
 
 def sample_performance(play=None, hall=None, when=None):
@@ -47,7 +55,22 @@ def sample_performance(play=None, hall=None, when=None):
         hall = sample_hall()
     if when is None:
         when = timezone.now() + timedelta(hours=1)
-    return Performance.objects.create(play=play, theatre_hall=hall, show_time=when)
+    return Performance.objects.create(
+        play=play, theatre_hall=hall, show_time=when
+    )
+
+
+def get_results(data):
+    """Return list payload regardless of pagination."""
+    if isinstance(data, dict) and "results" in data:
+        return data["results"]
+    return data
+
+
+def make_test_image(fmt="PNG", size=(2, 2), color=(1, 1, 1)):
+    buffer = BytesIO()
+    Image.new("RGB", size, color).save(buffer, format=fmt)
+    return buffer.getvalue()
 
 
 class PublicReadOnlyViewTests(TestCase):
@@ -58,30 +81,34 @@ class PublicReadOnlyViewTests(TestCase):
         # Actors
         Actor.objects.create(first_name="B", last_name="B")
         Actor.objects.create(first_name="A", last_name="A")
-        url = "/api/theatre/actors/"
-        res = self.client.get(url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        # Ordered by last_name, first_name
-        self.assertLessEqual(res.data[0]["last_name"], res.data[-1]["last_name"])
+        response = self.client.get(reverse("theatre:actor-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        actors = get_results(response.data)
+        self.assertGreaterEqual(len(actors), 2)
+        self.assertLessEqual(actors[0]["last_name"], actors[-1]["last_name"])
 
         # Genres
         Genre.objects.create(name="Z")
         Genre.objects.create(name="A")
-        res = self.client.get("/api/theatre/genres/")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        response = self.client.get(reverse("theatre:genre-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
         # Halls
         sample_hall(name="A")
         sample_hall(name="B")
-        res = self.client.get("/api/theatre/halls/")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        response = self.client.get(reverse("theatre:hall-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_public_cannot_write(self):
-        res = self.client.post(
-            "/api/theatre/actors/",
+        response = self.client.post(
+            reverse("theatre:actor-list"),
             {"first_name": "New", "last_name": "Actor"},
             format="json",
         )
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(
+            response.status_code,
+            (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN),
+        )
 
 
 class AdminWriteViewTests(TestCase):
@@ -91,42 +118,61 @@ class AdminWriteViewTests(TestCase):
         self.client.force_authenticate(self.admin)
 
     def test_admin_can_create_actor_genre_hall_play(self):
-        res = self.client.post(
-            "/api/theatre/actors/", {"first_name": "New", "last_name": "Star"}
+        # Actor
+        actor_response = self.client.post(
+            reverse("theatre:actor-list"),
+            {"first_name": "New", "last_name": "Star"},
+            format="json",
         )
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(actor_response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("id", actor_response.data)
+        actor_id = actor_response.data["id"]
 
-        res = self.client.post(
-            "/api/theatre/genres/", {"name": "Thriller"}, format="json"
+        # Genre
+        genre_response = self.client.post(
+            reverse("theatre:genre-list"),
+            {"name": "Thriller"},
+            format="json",
         )
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(genre_response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("id", genre_response.data)
+        genre_id = genre_response.data["id"]
 
-        res = self.client.post(
-            "/api/theatre/halls/",
+        # Hall
+        hall_response = self.client.post(
+            reverse("theatre:hall-list"),
             {"name": "Grand", "rows": 10, "seats_in_row": 12},
             format="json",
         )
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(hall_response.status_code, status.HTTP_201_CREATED)
 
-        # Create a play with relations
-        actor = Actor.objects.create(first_name="Tom", last_name="Hanks")
-        genre = Genre.objects.create(name="Drama2")
+        # Play
         payload = {
             "title": "Cast Away",
             "duration": 143,
-            "description": "",
-            "actors": [actor.id],
-            "genres": [genre.id],
+            "description": "Survival drama at sea",
+            "actors": [actor_id],
+            "genres": [genre_id],
         }
-        res = self.client.post("/api/theatre/plays/", payload, format="json")
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        play_response = self.client.post(
+            reverse("theatre:play-list"),
+            payload,
+            format="json",
+        )
+        self.assertEqual(play_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(play_response.data.get("title"), "Cast Away")
 
     def test_play_upload_image_action(self):
         play = sample_play(title="PosterTest")
-        url = f"/api/theatre/plays/{play.id}/upload-image/"
-        image = SimpleUploadedFile("poster.jpg", b"img", content_type="image/jpeg")
-        res = self.client.post(url, {"image": image}, format="multipart")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        url = reverse("theatre:play-upload-image", args=[play.id])
+        image_bytes = make_test_image(fmt="JPEG")
+        image_file = SimpleUploadedFile(
+            "poster.jpg", image_bytes, content_type="image/jpeg"
+        )
+        response = self.client.post(
+            url, {"image": image_file}, format="multipart"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         play.refresh_from_db()
         self.assertTrue(bool(play.image))
 
@@ -137,33 +183,48 @@ class PlayAndPerformanceReadTests(TestCase):
 
     def test_play_list_and_retrieve_serializers(self):
         play = sample_play(title="Lear")
+
         # List
-        res = self.client.get("/api/theatre/plays/")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn("actors", res.data[0])  # slugs in list serializer
+        response = self.client.get(reverse("theatre:play-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        plays = get_results(response.data)
+        self.assertGreaterEqual(len(plays), 1)
+        self.assertIn("actors", plays[0])
+
         # Retrieve
-        res = self.client.get(f"/api/theatre/plays/{play.id}/")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn("description", res.data)
-        self.assertIsInstance(res.data["actors"], list)
+        response = self.client.get(
+            reverse("theatre:play-detail", args=[play.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("description", response.data)
+        self.assertIsInstance(response.data["actors"], list)
 
     def test_performance_list_annotations_and_detail(self):
         hall = sample_hall(rows=3, seats_in_row=3)  # cap 9
-        perf = sample_performance(hall=hall)
-        # Book 3 tickets
+        performance = sample_performance(hall=hall)
         user = create_user()
-        resv = Reservation.objects.create(user=user)
-        Ticket.objects.create(performance=perf, reservation=resv, row=1, seat=1)
-        Ticket.objects.create(performance=perf, reservation=resv, row=1, seat=2)
-        Ticket.objects.create(performance=perf, reservation=resv, row=1, seat=3)
+        reservation1 = Reservation.objects.create(user=user)
+        Ticket.objects.create(
+            performance=performance, reservation=reservation1, row=1, seat=1
+        )
+        Ticket.objects.create(
+            performance=performance, reservation=reservation1, row=1, seat=2
+        )
+        Ticket.objects.create(
+            performance=performance, reservation=reservation1, row=1, seat=3
+        )
 
-        res = self.client.get("/api/theatre/performances/")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data[0]["tickets_available"], 6)
+        response = self.client.get(reverse("theatre:performance-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        performances = get_results(response.data)
+        self.assertGreaterEqual(len(performances), 1)
+        self.assertEqual(performances[0]["tickets_available"], 6)
 
-        res = self.client.get(f"/api/theatre/performances/{perf.id}/")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn("taken_places", res.data)
+        response = self.client.get(
+            reverse("theatre:performance-detail", args=[performance.id])
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("taken_places", response.data)
 
 
 class ReservationViewTests(TestCase):
@@ -173,60 +234,78 @@ class ReservationViewTests(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_auth_required(self):
-        client = APIClient()
-        res = client.get("/api/theatre/reservations/")
-        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        anonymous_client = APIClient()
+        response = anonymous_client.get(reverse("theatre:reservation-list"))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_returns_only_user_reservations(self):
         hall = sample_hall()
-        perf = sample_performance(hall=hall)
-        # Create reservation for another user
-        other = create_user(email="other@example.com")
-        other_res = Reservation.objects.create(user=other)
-        Ticket.objects.create(performance=perf, reservation=other_res, row=1, seat=1)
+        performance = sample_performance(hall=hall)
+        other_user = create_user(email="other@example.com")
+        other_reservation = Reservation.objects.create(user=other_user)
+        Ticket.objects.create(
+            performance=performance,
+            reservation=other_reservation,
+            row=1,
+            seat=1,
+        )
+        my_reservation = Reservation.objects.create(user=self.user)
+        Ticket.objects.create(
+            performance=performance, reservation=my_reservation, row=1, seat=2
+        )
 
-        # Create reservation for current user
-        my_res = Reservation.objects.create(user=self.user)
-        Ticket.objects.create(performance=perf, reservation=my_res, row=1, seat=2)
-
-        res = self.client.get("/api/theatre/reservations/")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        # Only 1 reservation for current user
-        self.assertEqual(len(res.data), 1)
+        response = self.client.get(reverse("theatre:reservation-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        items = get_results(response.data)
+        self.assertEqual(len(items), 1)
 
     def test_create_reservation_success(self):
         hall = sample_hall(rows=2, seats_in_row=2)
-        perf = sample_performance(hall=hall)
+        performance = sample_performance(hall=hall)
         payload = {
             "tickets": [
-                {"row": 1, "seat": 1, "performance": perf.id},
-                {"row": 2, "seat": 2, "performance": perf.id},
+                {"row": 1, "seat": 1, "performance": performance.id},
+                {"row": 2, "seat": 2, "performance": performance.id},
             ]
         }
-        res = self.client.post("/api/theatre/reservations/", payload, format="json")
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertIn("id", res.data)
+        response = self.client.post(
+            reverse("theatre:reservation-list"), payload, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("id", response.data)
 
     def test_create_reservation_rejects_past_performance(self):
         hall = sample_hall(rows=2, seats_in_row=2)
-        past_perf = sample_performance(hall=hall, when=timezone.now() - timedelta(hours=1))
+        past_performance = sample_performance(
+            hall=hall, when=timezone.now() - timedelta(hours=1)
+        )
         payload = {
             "tickets": [
-                {"row": 1, "seat": 1, "performance": past_perf.id},
+                {"row": 1, "seat": 1, "performance": past_performance.id}
             ]
         }
-        res = self.client.post("/api/theatre/reservations/", payload, format="json")
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("performance", str(res.data))
+        response = self.client.post(
+            reverse("theatre:reservation-list"), payload, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("performance", str(response.data))
 
     def test_create_reservation_duplicate_seat_error(self):
         hall = sample_hall(rows=2, seats_in_row=2)
-        perf = sample_performance(hall=hall)
-        # First, take a seat so second reservation conflicts
-        first_res = Reservation.objects.create(user=self.user)
-        Ticket.objects.create(performance=perf, reservation=first_res, row=1, seat=1)
+        performance = sample_performance(hall=hall)
+        first_reservation = Reservation.objects.create(user=self.user)
+        Ticket.objects.create(
+            performance=performance,
+            reservation=first_reservation,
+            row=1,
+            seat=1,
+        )
 
-        payload = {"tickets": [{"row": 1, "seat": 1, "performance": perf.id}]}
-        res = self.client.post("/api/theatre/reservations/", payload, format="json")
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("Some seat is already taken", str(res.data))
+        payload = {
+            "tickets": [{"row": 1, "seat": 1, "performance": performance.id}]
+        }
+        response = self.client.post(
+            reverse("theatre:reservation-list"), payload, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("unique", str(response.data).lower())

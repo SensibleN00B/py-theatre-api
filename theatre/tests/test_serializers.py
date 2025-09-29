@@ -1,34 +1,36 @@
 from datetime import timedelta
+from io import BytesIO
 
-from django.test import TestCase, RequestFactory
-from django.utils import timezone
 from django.contrib.auth import get_user_model
-from django.db.models import Count, F
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models import Count, F
+from django.test import RequestFactory, TestCase
+from django.utils import timezone
+from PIL import Image
 
 from theatre.models import (
     Actor,
     Genre,
-    Play,
-    TheatreHall,
     Performance,
-    Ticket,
+    Play,
     Reservation,
+    TheatreHall,
+    Ticket,
 )
 from theatre.serializers import (
     ActorSerializer,
     GenreSerializer,
-    PlaySerializer,
-    PlayListSerializer,
+    PerformanceDetailSerializer,
+    PerformanceListSerializer,
     PlayDetailSerializer,
     PlayImageSerializer,
-    TheatreHallSerializer,
-    PerformanceListSerializer,
-    PerformanceDetailSerializer,
-    TicketSerializer,
-    TicketListSerializer,
-    ReservationSerializer,
+    PlayListSerializer,
+    PlaySerializer,
     ReservationListSerializer,
+    ReservationSerializer,
+    TheatreHallSerializer,
+    TicketListSerializer,
+    TicketSerializer,
 )
 
 
@@ -70,6 +72,12 @@ def create_sample_performance(play=None, hall=None, when=None):
     return Performance.objects.create(
         play=play, theatre_hall=hall, show_time=when
     )
+
+
+def create_test_image(fmt="JPEG", size=(2, 2), color=(1, 1, 1)):
+    buf = BytesIO()
+    Image.new("RGB", size, color).save(buf, format=fmt)
+    return buf.getvalue()
 
 
 class TestSerializers(TestCase):
@@ -114,8 +122,9 @@ class TestSerializers(TestCase):
         assert not serializer.is_valid()
         assert "image" in serializer.errors
 
+        img_bytes = create_test_image(fmt="JPEG")
         image = SimpleUploadedFile(
-            "poster.jpg", b"filecontent", content_type="image/jpeg"
+            "poster.jpg", img_bytes, content_type="image/jpeg"
         )
         serializer = PlayImageSerializer(play, data={"image": image})
         serializer.is_valid(raise_exception=True)

@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 from django.db import IntegrityError
+from django.test import TestCase
 
 
 class UserModelTests(TestCase):
@@ -29,7 +29,9 @@ class UserModelTests(TestCase):
         self.assertEqual(user.email, "TEST@example.com")
 
     def test_email_required(self):
-        with self.assertRaisesMessage(ValueError, "The given email must be set"):
+        with self.assertRaisesMessage(
+            ValueError, "The given email must be set"
+        ):
             self.User.objects.create_user(email=None, password="pass123")
 
     def test_email_unique(self):
@@ -40,12 +42,16 @@ class UserModelTests(TestCase):
 
     def test_create_superuser_flags(self):
         email = "admin@example.com"
-        user = self.User.objects.create_superuser(email=email, password="admin-pass")
+        user = self.User.objects.create_superuser(
+            email=email, password="admin-pass"
+        )
         self.assertTrue(user.is_staff)
         self.assertTrue(user.is_superuser)
 
     def test_create_superuser_with_is_staff_false_raises(self):
-        with self.assertRaisesMessage(ValueError, "Superuser must have is_staff=True."):
+        with self.assertRaisesMessage(
+            ValueError, "Superuser must have is_staff=True."
+        ):
             self.User.objects.create_superuser(
                 email="admin2@example.com", password="pass123", is_staff=False
             )
@@ -55,7 +61,9 @@ class UserModelTests(TestCase):
             ValueError, "Superuser must have is_superuser=True."
         ):
             self.User.objects.create_superuser(
-                email="admin3@example.com", password="pass123", is_superuser=False
+                email="admin3@example.com",
+                password="pass123",
+                is_superuser=False,
             )
 
     def test_user_str_returns_email(self):

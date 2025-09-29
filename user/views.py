@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, permissions, generics
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import generics, permissions, viewsets
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from user.serializers import UserSerializer
